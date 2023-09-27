@@ -2,6 +2,7 @@
 import socketserver
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
+# Copyright 2023 Zijing Lu
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,11 +33,45 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def handle(self):
         self.data = self.request.recv(1024).decode('utf-8').strip()
         print ("Got a request of: %s\n" % self.data)
-        #self.request.sendall(bytearray("OK\n",'utf-8'))
-        requestList = self.data.split(' ')
+
+        # spilt self.data into list of strings
+        if self.data != '':
+            requestList = self.data.split(' ')
         print(requestList)
+
+        # tests
         self.request.sendall(requestList[0].encode('utf-8'))
+        self.request.sendall("\n".encode('utf-8'))
         self.request.sendall(requestList[1].encode('utf-8'))
+
+        # get the method and the requested file
+        method = requestList[0]
+        requestedFile = requestList[1]
+        requestedFile = requestedFile.lstrip('/')
+
+        # load index.html as default
+        if(requestedFile == ''):
+            requestedFile = 'index.html'
+
+        # check if the request if GET
+        if method == 'GET':
+            header = 'HTTP/1.1 405 Not Found\r\n'
+            response = '<html><body><center><h3>Error 405: Not Found</h3><p>Python HTTP Server</p></center></body></html>'.encode('utf-8')
+            finalResponse = header.encode('utf-8')
+            finalResponse += response
+            self.request.sendall(finalResponse)
+            return
+
+        # check if file can be found
+        try:
+            file = open(f'www/{requestedFile}', 'rb')
+            response = file.read
+            file.close()
+        except:
+            pass
+
+        
+
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
