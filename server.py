@@ -50,7 +50,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         requestedFile = requestedFile.lstrip('/')
 
         # load index.html as default
-        if(requestedFile == ''):
+        if(requestedFile == '/'):
             requestedFile = 'index.html'
 
         # check if the request if GET
