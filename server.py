@@ -36,39 +36,80 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         # spilt self.data into list of strings
         if self.data != '':
-            requestList = self.data.split(' ')
-        print(requestList)
+            requestList = (self.data).split(' ')
 
         # tests
-        self.request.sendall(requestList[0].encode('utf-8'))
-        self.request.sendall("\n".encode('utf-8'))
-        self.request.sendall(requestList[1].encode('utf-8'))
+        # self.request.sendall(requestList[0].encode('utf-8'))
+        # self.request.sendall("\n".encode('utf-8'))
+        # self.request.sendall(requestList[1].encode('utf-8'))
 
         # get the method and the requested file
         method = requestList[0]
         requestedFile = requestList[1]
         requestedFile = requestedFile.lstrip('/')
 
-        # load index.html as default
-        if(requestedFile == '/'):
-            requestedFile = 'index.html'
-
-        # check if the request if GET
-        if method == 'GET':
-            header = 'HTTP/1.1 405 Not Found\r\n'
-            response = '<html><body><center><h3>Error 405: Not Found</h3><p>Python HTTP Server</p></center></body></html>'.encode('utf-8')
-            finalResponse = header.encode('utf-8')
+        # check if the request if GET, if not set header and response to 405 Method Not Allowed
+        if method != 'GET':
+            header = 'HTTP/1.1 405 Method Not Allowed\r\n'
+            file = open('www/405.html', 'rb')
+            response = file.read().decode('utf-8')
+            file.close()
+            finalResponse = header
             finalResponse += response
-            self.request.sendall(finalResponse)
+            self.request.sendall(finalResponse.encode('utf-8'))
             return
+        
+        # check for redirect
+        if requestedFile == 'deep':
+            header = 'HTTP/1.1 301 Moved Permanently\r\n'
+            response = f'Location: deep/\r\n'
+            finalResponse = header
+            finalResponse += response
+            self.request.sendall(finalResponse.encode('utf-8'))
+            return
+        
+        # load index.html as default
+        print(requestedFile)
+        if requestedFile == '':
+            requestedFile = 'index.html'
+        elif requestedFile == 'deep/':
+            requestedFile = 'deep/index.html'
 
-        # check if file can be found
+
+        # check if file can be found read it if it can
         try:
             file = open(f'www/{requestedFile}', 'rb')
-            response = file.read
+            response = file.read().decode('utf-8')
             file.close()
-        except:
-            pass
+
+            # set header to 200 if its a valid file
+            header = 'HTTP/1.1 200 OK\r\n'
+
+            # check the mime type of the file
+            if (requestedFile.endswith('.css')):
+                mimetype = 'text/css'
+            else:
+                mimetype = 'text/html'
+
+            header += 'Content-Type: '+ str(mimetype)+ '\r\n'
+
+        # if file not found set header and response to 404 not found
+        except Exception as e:
+            header = 'HTTP/1.1 404 Not Found\r\n'
+            file = open('www/404.html', 'rb')
+            response = file.read().decode('utf-8')
+            file.close()
+
+
+        # send the final page
+        finalResponse = header
+        finalResponse += response
+        self.request.sendall(finalResponse.encode('utf-8'))
+
+        return
+            
+
+
 
         
 
