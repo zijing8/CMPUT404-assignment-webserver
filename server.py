@@ -1,5 +1,6 @@
 #  coding: utf-8 
 import socketserver
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # Copyright 2023 Zijing Lu
@@ -68,12 +69,26 @@ class MyWebServer(socketserver.BaseRequestHandler):
             self.request.sendall(finalResponse.encode('utf-8'))
             return
         
-        # load index.html as default
-        print(requestedFile)
+
+        # check if path exist
+        if not os.path.exists(f'www/{requestedFile}'):
+            header = 'HTTP/1.1 404 Not Found\r\n'
+            file = open('www/404.html', 'rb')
+            response = file.read().decode('utf-8')
+            file.close()
+            finalResponse = header
+            finalResponse += response
+            self.request.sendall(finalResponse.encode('utf-8'))
+            return
+
+        # load index.html as default, and check the requested file path
         if requestedFile == '':
             requestedFile = 'index.html'
         elif requestedFile == 'deep/':
             requestedFile = 'deep/index.html'
+        elif requestedFile.endswith('/'):
+            requestedFile = requestedFile + 'index.html'
+
 
 
         # check if file can be found read it if it can
